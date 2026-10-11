@@ -1,0 +1,67 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import test from 'node:test'
+
+const client = await readFile(new URL('../client.js', import.meta.url), 'utf8')
+
+test('browser entry registers an official right-sidebar tab for provider usage', async () => {
+  assert.match(client, /sidebarRightTabs/)
+  assert.match(client, /sidebar\.right\.pane\.tab/)
+  assert.doesNotMatch(client, /betterSidebar|registerTab/)
+  const metadata=JSON.parse(await readFile(new URL('../package.json', import.meta.url),'utf8'))
+  assert.deepEqual(metadata.dsh.client.inject,['@deepseek-ai/dsh-client-connection','@deepseek-ai/dsh-client-locale','@deepseek-ai/dsh-client-ui-sidebar-right'])
+  assert.equal(metadata.peerDependencies['@deepseek-ai/dsh-credentials'],'0.2.0-rc.2')
+  assert.match(client, /\/usage-dashboard/)
+  assert.equal(client.includes('shell.overlay'), false)
+  assert.doesNotMatch(client, /conversation\.session\.header\.actions/)
+  assert.doesNotMatch(client, /sidebar\.footer\.action/)
+  assert.doesNotMatch(client, /conversation\.input\.dock/)
+})
+
+test('browser bundle renders usage first with credentials folded below and safe status states', () => {
+  assert.ok(client.indexOf("className:'dsw-usage-section") < client.indexOf("className:'dsw-credential-section"))
+  assert.equal((client.match(/['"]data-dsh-usage-tab['"]/g) ?? []).length, 1)
+  assert.equal((client.match(/overflow-y:auto/g) ?? []).length, 1)
+  assert.match(client, /dsw-credential-heading/)
+  assert.match(client, /dsw-credential-surface/)
+  assert.match(client, /dsw-credential-accent/)
+  assert.match(client, /dsw-usage-heading/)
+  assert.match(client, /dsw-usage-surface/)
+  assert.match(client, /dsw-usage-accent/)
+  assert.match(client, /writable!==true/)
+  assert.match(client, /const inputDisabled=status\.writable!==true\|\|credBusy===row\.reference/)
+  assert.match(client, /const saveDisabled=inputDisabled\|\|!hasInput/)
+  assert.match(client, /disabled:inputDisabled/)
+  assert.match(client, /disabled:saveDisabled/)
+  assert.match(client, /"unknown": "Unknown"/)
+  assert.match(client, /"error": "Error"/)
+  assert.match(client, /dsw-credential-status--unknown/)
+  assert.match(client, /dsw-provider-status--error/)
+  assert.match(client, /OPENCODE_GO_API_KEY/)
+  assert.match(client, /DEEPSEEK_API_KEY/)
+  assert.match(client, /dsw-fold-toggle/)
+  assert.match(client, /dsw-credential-body/)
+  assert.match(client, /credOpen/)
+  assert.match(client, /expOpen/)
+  assert.match(client, /setCredOpen\(open=>!open\)/)
+  assert.match(client, /isolation:isolate/)
+  assert.match(client, /flex-direction:column/)
+  assert.match(client, /context:ctx/)
+  assert.match(client, /navigator\.language/)
+  assert.doesNotMatch(client, /DSH_USAGE_OPENCODE_SESSION/)
+})
+
+test('browser bundle calls the exact /api routes and keeps the legacy channel as fallback', () => {
+  assert.match(client, /\/api\/usage-dashboard\//)
+  assert.match(client, /const HTTP_PATHS=/)
+  assert.match(client, /'settings\/read':'settings'/)
+  assert.match(client, /'credential\/write':'credential'/)
+  assert.match(client, /credentials:'same-origin'/)
+  assert.match(client, /cache:'no-store'/)
+  assert.match(client, /Usage dashboard route is not mounted/i)
+  assert.match(client, /connection\.rpc\.call\(channel,endpoint,payload\)/)
+  assert.match(client, /httpError\?\.transport===true/)
+  // The old channel-only transport must not come back: a missing route would
+  // surface as a bare "transport failure ... HTTP 405" again.
+  assert.doesNotMatch(client, /DSH loopback RPC is unavailable/)
+})

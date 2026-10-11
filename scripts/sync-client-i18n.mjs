@@ -1,0 +1,11 @@
+import { readFile, writeFile } from 'node:fs/promises'
+const root = new URL('../', import.meta.url)
+const compiled = await readFile(new URL('lib/client/i18n.js', root), 'utf8')
+const shared = compiled.replace(/^export /gm, '').replace(/^\/\/# sourceMappingURL=.*$/gm, '').trim()
+const url = new URL('client.js', root)
+const client = await readFile(url, 'utf8')
+const begin = client.indexOf('    // BEGIN SHARED I18N')
+const end = client.indexOf('    // END SHARED I18N', begin)
+if (begin < 0 || end < 0) throw new Error('Browser i18n markers missing')
+const next = client.slice(0, begin) + '    // BEGIN SHARED I18N — generated from src/client/i18n.ts.\n' + shared + '\n' + client.slice(end)
+if (next !== client) await writeFile(url, next)

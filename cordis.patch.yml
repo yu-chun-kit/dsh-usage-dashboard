@@ -1,0 +1,46 @@
+# Bundle layer for dsh-usage-dashboard.
+# The package's Node half registers the loopback service and its dsh.client
+# declaration makes the browser half available to the Web client module table.
+- insert:
+    - id: usage-dashboard
+      name: 'dsh-usage-dashboard'
+      config:
+        enabledProviders:
+          - openrouter
+          - deepseek
+          - deepgram
+          - tavily
+          - chatgpt-codex
+          - opencode-go
+        refreshTtlMinutes: 15
+        providerOptions: {}
+        # EN: Do NOT put API keys here. Add them via Harness credential
+        # management (same mechanism as Settings → Models for the DeepSeek key,
+        # stored in $DSH_HOME/.credentials.yaml). This page only ever shows
+        # Configured / Not configured and never returns a secret value:
+        # - OpenRouter → OPENROUTER_API_KEY
+        # - DeepSeek → DEEPSEEK_API_KEY (official balance: GET https://api.deepseek.com/user/balance)
+        # - Deepgram → DEEPGRAM_API_KEY, PLUS providerOptions below. The key
+        #   alone is NOT enough: the balance endpoint is
+        #   GET /v1/projects/{projectId}/balances/{balanceId}, so both IDs are
+        #   required before any balance is fetched.
+        # - Tavily → TAVILY_API_KEY (providerOptions.tavily.projectId optional)
+        # - ChatGPT/Codex → no key needed.
+        # - OpenCode Go → OPENCODE_GO_API_KEY; its fixed zero-cost usage
+        #   endpoint is experimental and returns rolling/weekly/monthly windows.
+        # - Kilo/Serper/Brave remain experimental and `unsupported` (including
+        #   their DSH_USAGE_* session references).
+        # 簡體：不要把 Key 寫在這裡。去 Harness 憑據管理添加（與 Settings → Models
+        # 放 DeepSeek Key 同一機制）。Deepgram 光有 Key 不夠，還要下面
+        # projectId/balanceId 才會真正拉取餘額；Tavily 的 projectId 可選。
+        # 繁體（廣東話）：唔好將 Key 寫喺呢度！去 Harness 憑證管理加（同 Settings →
+        # Models 放 DeepSeek Key 同一個機制）。Deepgram 淨係有 Key 係唔夠嘅，仲要
+        # 下面 projectId/balanceId 先會真正拉到 balance；Tavily 嘅 projectId 可選。
+        # Fill in the IDs, then uncomment:
+        # 填好後取消註釋 / 填好后取消注释：
+        # providerOptions:
+        #   deepgram:
+        #     projectId: replace-with-project-id
+        #     balanceId: replace-with-balance-id
+        #   tavily:
+        #     projectId: optional-project-id

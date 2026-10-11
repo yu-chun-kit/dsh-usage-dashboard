@@ -1,0 +1,17 @@
+lib/
+node_modules/
+coverage/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+.credentials.yaml
+.credentials.yml
+auth.json
+.dsh/
+references/
+AGENTS.md
+task_plan.md
+findings.md
+progress.md

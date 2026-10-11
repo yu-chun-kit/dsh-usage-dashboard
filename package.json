@@ -1,0 +1,71 @@
+{
+  "name": "dsh-usage-dashboard",
+  "version": "0.1.0",
+  "description": "A loopback-only usage and credit dashboard bundle for DeepSeek Harness.",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "repository": { "type": "git", "url": "https://github.com/yu-chun-kit/dsh-usage-dashboard.git" },
+  "homepage": "https://github.com/yu-chun-kit/dsh-usage-dashboard#readme",
+  "bugs": { "url": "https://github.com/yu-chun-kit/dsh-usage-dashboard/issues" },
+  "license": "MIT",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/client/index.d.ts",
+      "default": "./client.js"
+    },
+    "./host": {
+      "types": "./lib/host/index.d.ts",
+      "default": "./lib/host/index.js"
+    },
+    "./provider-api": {
+      "types": "./lib/core/types.d.ts",
+      "default": "./lib/core/types.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "client.js",
+    "styles",
+    "locales",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh-CN.md",
+    "README.zh-TW.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/sync-locales.mjs && tsc -p tsconfig.json && node scripts/sync-client-i18n.mjs",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": { "typescript": "5.9.3" },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.4",
+    "@deepseek-ai/dsh-client-connection": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-locale": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-credentials": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-sidebar-right": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.0-rc.2"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-sidebar-right"
+      ]
+    }
+  }
+}

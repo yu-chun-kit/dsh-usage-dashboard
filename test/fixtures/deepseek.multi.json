@@ -1,0 +1,17 @@
+{
+  "is_available": true,
+  "balance_infos": [
+    {
+      "currency": "CNY",
+      "total_balance": "50.25",
+      "granted_balance": "0.25",
+      "topped_up_balance": "50.00"
+    },
+    {
+      "currency": "USD",
+      "total_balance": "7.50",
+      "granted_balance": "0.00",
+      "topped_up_balance": "7.50"
+    }
+  ]
+}
