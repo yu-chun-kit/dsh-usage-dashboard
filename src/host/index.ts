@@ -10,6 +10,7 @@ import type { HostLoggerLike } from '../core/logging.js'
 import { HOST_CREDENTIAL_RECORDS, hasSecret } from '../core/credentials.js'
 import { normalizeActivity } from '../core/activity.js'
 import type { UsageActivityStore } from '../core/activity.js'
+import type { UsageSnapshotStore } from '../core/snapshot-store.js'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -118,6 +119,17 @@ function credentialStatusResolver(input: UsageDashboardHostContext['credentials'
 }
 
 const ACTIVITY_RECORD_KEY = 'dsh-usage-dashboard/activity'
+const SNAPSHOTS_RECORD_KEY = 'dsh-usage-dashboard/snapshots'
+
+/** Reuse DSH's atomic record API; only the dedicated display-snapshot key is written. */
+function snapshotStore(input: UsageDashboardHostContext['credentials']): UsageSnapshotStore | undefined {
+  if (input === undefined || !('readRecord' in input) || !input.readRecord || !input.modifyRecord) return undefined
+  const service = input
+  return {
+    read: async () => { const record = await service.readRecord?.(SNAPSHOTS_RECORD_KEY); return record?.kind === 'grant' ? record.payload : undefined },
+    write: async value => { await service.modifyRecord?.(SNAPSHOTS_RECORD_KEY, async () => ({ kind: 'grant', payload: value })) },
+  }
+}
 
 function activityStore(input: UsageDashboardHostContext['credentials']): UsageActivityStore | undefined {
   if (input === undefined || !('readRecord' in input) || !input.readRecord || !input.modifyRecord) return undefined
@@ -206,6 +218,7 @@ export function applyHost(ctx: UsageDashboardHostContext, config?: unknown): (()
     now: lookupService<() => Date>(lookup, 'now'),
     credentialStatus: credentialStatusResolver(credentials),
     activityStore: activityStore(credentials),
+    snapshotStore: snapshotStore(credentials),
     logger,
   })
 

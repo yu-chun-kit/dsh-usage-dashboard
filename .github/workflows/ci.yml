@@ -15,3 +15,23 @@ jobs:
       - run: npm test
       - run: npm run check
       - run: git diff --exit-code -- client.js src/client/messages.ts
+  dsh-contract:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh: [0.2.0-rc.2, 0.2.1-rc.2, 0.2.1-rc.3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Install exact DSH fixture modules (no install scripts or live profile)
+        run: npm install --prefix "$RUNNER_TEMP/dsh-compat" --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org/ "@deepseek-ai/dsh@${{ matrix.dsh }}" "@deepseek-ai/dsh-client-ui-slots@${{ matrix.dsh }}"
+      - name: Verify real auth, record persistence and keyed sidebar contracts offline
+        env:
+          DSH_TEST_MODULE_ROOT: ${{ runner.temp }}/dsh-compat/node_modules
+        run: node --test test/dsh-contract.test.mjs

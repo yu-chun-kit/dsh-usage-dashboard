@@ -9,6 +9,7 @@ import { CREDENTIAL_REFERENCES, describeKnownReference, validateSecretCandidate 
 import type { CredentialStatus, CredentialStatusResolver } from './credentials.js'
 import { normalizeActivity } from './activity.js'
 import type { UsageActivity, UsageActivityStore } from './activity.js'
+import type { UsageSnapshotStore } from './snapshot-store.js'
 import { PROVIDER_IDS } from './types.js'
 import type {
   CredentialResolver,
@@ -45,6 +46,7 @@ export interface UsageDashboardServiceOptions {
   readonly credentialStatus?: CredentialStatusResolver
   readonly logger?: UsageLogger
   readonly activityStore?: UsageActivityStore
+  readonly snapshotStore?: UsageSnapshotStore
 }
 
 export interface UsageDashboardService {
@@ -93,7 +95,8 @@ export function createUsageDashboardService(options: UsageDashboardServiceOption
   const now = options.now ?? (() => new Date())
   let requestSequence = 0
   let latestManualRequest = 0
-  let cache = new UsageDashboardCache(adapters, options.credentials, options.fetcher ?? globalProviderFetch(), currentSettings, { now, maxConcurrent: 3, logger })
+  const cacheOptions = { now, maxConcurrent: 3, logger, snapshotStore: options.snapshotStore }
+  let cache = new UsageDashboardCache(adapters, options.credentials, options.fetcher ?? globalProviderFetch(), currentSettings, cacheOptions)
   let activity: UsageActivity = {}
   const readActivity = async (): Promise<UsageActivity> => {
     if (options.activityStore !== undefined) {
@@ -111,7 +114,7 @@ export function createUsageDashboardService(options: UsageDashboardServiceOption
   }
   const observeCredentialUpdate = async (reference: string): Promise<void> => {
     if (describeKnownReference(reference) === undefined) return
-    cache.clear()
+    await cache.clear()
     const at = now().toISOString()
     await updateActivity(current => ({ ...current, credentialUpdatedAt: { ...current.credentialUpdatedAt, [reference]: at } }))
   }
@@ -136,6 +139,12 @@ export function createUsageDashboardService(options: UsageDashboardServiceOption
           const body = isRecord(payload) ? payload : {}
           const providerIds = body.providerIds === undefined ? currentSettings.enabledProviders : validateProviderIds(body.providerIds)
           const force = body.force === true
+          if (body.cacheOnly !== undefined && typeof body.cacheOnly !== 'boolean') throw badRequest('cacheOnly must be a boolean.')
+          if (body.cacheOnly === true) {
+            if (force) throw badRequest('cacheOnly cannot force a refresh.')
+            const snapshot = await cache.cachedSnapshot(providerIds)
+            return { ok: true, value: { ...snapshot, activity: await readActivity() } }
+          }
           const manual = force && body.reason === 'manual'
           const requestedAt = now().toISOString()
           if (manual) latestManualRequest = sequence
@@ -193,8 +202,9 @@ export function createUsageDashboardService(options: UsageDashboardServiceOption
           return { ok: true, value: { reference, configured: saved?.configured ?? true, writable: saved?.writable ?? false, updatedAt: saved?.updatedAt } }
         }
         if (!isRecord(payload)) throw badRequest('settings/write payload must be an object.')
+        await cache.clear()
         currentSettings = normalizeSettings(payload.settings)
-        cache = new UsageDashboardCache(adapters, options.credentials, options.fetcher ?? globalProviderFetch(), currentSettings, { now, maxConcurrent: 3, logger })
+        cache = new UsageDashboardCache(adapters, options.credentials, options.fetcher ?? globalProviderFetch(), currentSettings, cacheOptions)
         logger.info('rpc.success', { requestId, endpoint, durationMs: Math.max(0, now().getTime() - startedAt), status: 'ok' })
         return { ok: true, value: currentSettings }
       } catch (error) {

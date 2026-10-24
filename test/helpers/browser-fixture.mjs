@@ -4,7 +4,7 @@ import { runInNewContext } from 'node:vm'
 const client = await readFile(new URL('../../client.js', import.meta.url), 'utf8')
 
 /** Fixture runtime for the actual ModuleLoader entry; never contacts DSH or a provider. */
-export function browserFixture({ fetch, states = [], locale = 'zh-Hant', browserLocale = typeof locale === 'string' ? locale : 'en', localeService, rpcFetch, localeReadThrows = false } = {}) {
+export function browserFixture({ fetch, states = [], locale = 'zh-Hant', browserLocale = typeof locale === 'string' ? locale : 'en', localeService, rpcFetch, localeReadThrows = false, localStorage } = {}) {
   let selectedLocale = localeService ?? locale
   const values = [...states]; const refs = []; const dependencies = []; const callbacks = []; const cleanups = []; const disposers = []
   let cursor = 0; let refCursor = 0; let effectCursor = 0; let callbackCursor = 0
@@ -14,7 +14,7 @@ export function browserFixture({ fetch, states = [], locale = 'zh-Hant', browser
   const registrations=[]
   const React = {
     createElement: (type, props, ...children) => ({ type, props: props ?? {}, children: children.flat(Infinity).filter(item => item !== null && item !== undefined && item !== false) }),
-    useState: initial => { const index = cursor++; if (!(index in values)) values[index] = initial; return [values[index], next => { values[index] = typeof next === 'function' ? next(values[index]) : next }] },
+    useState: initial => { const index = cursor++; if (!(index in values)) values[index] = typeof initial === 'function' ? initial() : initial; return [values[index], next => { values[index] = typeof next === 'function' ? next(values[index]) : next }] },
     useRef: initial => { const index = refCursor++; return refs[index] ??= { current: initial } },
     useCallback: (callback, deps) => { const index = callbackCursor++; const previous = callbacks[index]; if (!previous || deps.some((dep, i) => previous.deps[i] !== dep)) callbacks[index] = { callback, deps }; return callbacks[index].callback },
     useEffect: (callback, deps) => { const index = effectCursor++; if (!dependencies[index] || deps.some((dep, i) => dependencies[index][i] !== dep)) effects.push({ index, callback }); dependencies[index] = deps },
@@ -27,7 +27,7 @@ export function browserFixture({ fetch, states = [], locale = 'zh-Hant', browser
     effect: callback => { const dispose = callback(); if (typeof dispose === 'function') disposers.push(dispose) },
   }
   runInNewContext(client, {
-    window: { __ModuleLoader__: { load: module => { module.factory(name => name === 'react' ? React : undefined).apply(context) } } },
+    window: { localStorage, __ModuleLoader__: { load: module => { module.factory(name => name === 'react' ? React : undefined).apply(context) } } },
     document: { querySelector: () => null, createElement: () => ({ dataset: {} }), head: { appendChild: node => styles.push(node.textContent) } },
     fetch, Intl, Date, navigator: { language: browserLocale }, requestAnimationFrame: callback => callback(),
   })

@@ -64,6 +64,8 @@ export interface UsageDashboardSnapshot {
   readonly providers: readonly ProviderSnapshot[]
   readonly generatedAt: string
   readonly activity?: UsageActivity
+  /** Present for cache-only reads. True means data is missing or expired. */
+  readonly needsRefresh?: boolean
 }
 
 export interface UsageDashboardSettings {

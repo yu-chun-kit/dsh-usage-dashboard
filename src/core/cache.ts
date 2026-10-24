@@ -1,6 +1,8 @@
 import { publicError } from './errors.js'
 import { NOOP_USAGE_LOGGER } from './logging.js'
 import type { UsageLogger } from './logging.js'
+import { normalizeStoredProvider, readStoredProviders, withinSnapshotLimit } from './snapshot-store.js'
+import type { UsageSnapshotStore, StoredUsageSnapshots } from './snapshot-store.js'
 import type {
   CredentialResolver,
   ProviderAdapter,
@@ -15,6 +17,7 @@ export interface UsageCacheOptions {
   readonly now?: () => Date
   readonly maxConcurrent?: number
   readonly logger?: UsageLogger
+  readonly snapshotStore?: UsageSnapshotStore
 }
 
 interface CacheEntry {
@@ -25,7 +28,7 @@ interface CacheEntry {
 
 type Release = () => void
 
-/** In-memory cache with bounded provider work and one request per provider. */
+/** Shared cache with optional host persistence, bounded work and one request per provider. */
 export class UsageDashboardCache {
   private readonly adapters: ReadonlyMap<ProviderId, ProviderAdapter>
   private readonly credentials: CredentialResolver
@@ -39,6 +42,12 @@ export class UsageDashboardCache {
   private readonly waiters: Array<() => void> = []
   private active = 0
   private generation = 0
+  private readonly snapshotStore?: UsageSnapshotStore
+  private readonly scope: string
+  private hydration?: Promise<void>
+  private persistence: Promise<void> = Promise.resolve()
+  private revision = 0
+  private persistedRevision = 0
 
   constructor(
     adapters: readonly ProviderAdapter[],
@@ -54,19 +63,71 @@ export class UsageDashboardCache {
     this.now = options.now ?? (() => new Date())
     this.maxConcurrent = Math.max(1, Math.min(3, Math.floor(options.maxConcurrent ?? 3)))
     this.logger = options.logger ?? NOOP_USAGE_LOGGER
+    this.snapshotStore = options.snapshotStore
+    this.scope = JSON.stringify(settings)
   }
 
   async snapshot(providerIds: readonly ProviderId[], force = false, signal?: AbortSignal): Promise<UsageDashboardSnapshot> {
+    const generation = this.generation
+    await this.restore()
     const ids = [...new Set(providerIds)]
     const effectiveSignal = signal ?? new AbortController().signal
     const providers = await Promise.all(ids.map((id) => this.getProvider(id, force, effectiveSignal)))
+    if (generation === this.generation) await this.persist(generation)
     return { providers, generatedAt: this.now().toISOString() }
   }
 
-  clear(): void {
+  /** No provider work, including when another device already has a refresh in flight. */
+  async cachedSnapshot(providerIds: readonly ProviderId[]): Promise<UsageDashboardSnapshot> {
+    await this.restore()
+    const ids = [...new Set(providerIds)]
+    const providers = ids.flatMap(id => { const entry = this.entries.get(id); return entry === undefined ? [] : [entry.snapshot] })
+    const needsRefresh = ids.some(id => { const entry = this.entries.get(id); return entry === undefined || entry.expiresAtMs <= this.now().getTime() })
+    return { providers, generatedAt: this.now().toISOString(), needsRefresh }
+  }
+
+  clear(): Promise<void> {
     this.generation += 1
+    this.revision += 1
+    this.hydration = Promise.resolve()
     this.entries.clear()
     this.inFlight.clear()
+    return this.persist(this.generation)
+  }
+
+  private restore(): Promise<void> {
+    if (this.hydration !== undefined) return this.hydration
+    const generation = this.generation
+    this.hydration = (async () => {
+      if (this.snapshotStore === undefined) return
+      try {
+        const providers = readStoredProviders(await this.snapshotStore.read(), this.scope)
+        if (generation !== this.generation) return
+        for (const provider of providers) {
+          const adapter = this.adapters.get(provider.providerId)
+          if (adapter === undefined || !this.settings.enabledProviders.includes(provider.providerId)) continue
+          const snapshot = { ...provider, displayName: adapter.displayName, stability: adapter.stability }
+          this.entries.set(provider.providerId, { snapshot, fetchedAtMs: Date.parse(provider.fetchedAt!), expiresAtMs: Date.parse(provider.expiresAt!) })
+        }
+      } catch { this.logger.warn('snapshot.read-unavailable', { errorCode: 'internal' }) }
+    })()
+    return this.hydration
+  }
+
+  private persist(generation: number): Promise<void> {
+    if (this.snapshotStore === undefined) return Promise.resolve()
+    this.persistence = this.persistence.then(async () => {
+      if (generation !== this.generation || this.revision === this.persistedRevision) return
+      const revision = this.revision
+      const providers = [...this.entries.values()].map(entry => normalizeStoredProvider(entry.snapshot)).filter((provider): provider is ProviderSnapshot => provider !== undefined && this.settings.enabledProviders.includes(provider.providerId))
+      const value: StoredUsageSnapshots = { version: 1, scope: this.scope, providers }
+      if (!withinSnapshotLimit(value)) { this.logger.warn('snapshot.limit', { errorCode: 'internal' }); return }
+      try {
+        await this.snapshotStore!.write(value)
+        if (generation === this.generation) this.persistedRevision = revision
+      } catch { this.logger.warn('snapshot.write-unavailable', { errorCode: 'internal' }) }
+    })
+    return this.persistence
   }
 
   private getProvider(id: ProviderId, force: boolean, signal: AbortSignal): Promise<ProviderSnapshot> {
@@ -117,7 +178,7 @@ export class UsageDashboardCache {
         attemptedAt: new Date(startedAt).toISOString(),
         expiresAt: new Date(expiresAtMs).toISOString(),
       }
-      if (generation === this.generation) this.entries.set(id, { snapshot: withExpiry, fetchedAtMs, expiresAtMs })
+      if (generation === this.generation) { this.entries.set(id, { snapshot: withExpiry, fetchedAtMs, expiresAtMs }); this.revision += 1 }
       this.logger.info('provider.success', {
         providerId: id,
         adapter: adapter.displayName,
@@ -128,7 +189,7 @@ export class UsageDashboardCache {
       return withExpiry
     } catch (error) {
       const diagnostic = publicError(error, id)
-      if (previous !== undefined && (previous.snapshot.state === 'fresh' || previous.snapshot.state === 'stale')) {
+      if (previous !== undefined && (previous.snapshot.state === 'fresh' || previous.snapshot.state === 'stale') && ['provider-http', 'provider-timeout', 'provider-invalid-response', 'internal'].includes(diagnostic.code)) {
         const stale: ProviderSnapshot = {
           ...previous.snapshot,
           state: 'stale',
@@ -137,7 +198,7 @@ export class UsageDashboardCache {
           attemptedAt: new Date(startedAt).toISOString(),
         }
         // Other devices must see the failed attempt too, without extending the good data's TTL.
-        if (generation === this.generation) this.entries.set(id, { ...previous, snapshot: stale })
+        if (generation === this.generation) { this.entries.set(id, { ...previous, snapshot: stale }); this.revision += 1 }
         this.logger.warn('provider.failure', {
           providerId: id,
           adapter: adapter.displayName,
@@ -159,6 +220,7 @@ export class UsageDashboardCache {
         stale: false,
       })
       const state = diagnostic.code === 'provider-unsupported' ? 'unsupported' : diagnostic.code === 'credential-missing' ? 'needs-configuration' : 'error'
+      if (generation === this.generation && this.entries.delete(id)) this.revision += 1
       return { ...this.errorSnapshot(id, diagnostic.message, state), errorCode: diagnostic.code, attemptedAt: new Date(startedAt).toISOString() }
     } finally {
       release?.()

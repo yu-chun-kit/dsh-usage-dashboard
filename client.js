@@ -1,4 +1,4 @@
-/* DSH 0.1.1-rc.1 usage-dashboard side card for dsh-better-sidebar. */
+/* DSH 0.2 usage dashboard for the official right sidebar. */
 window.__ModuleLoader__.load({
   id: 'dsh-usage-dashboard',
   factory: (require) => {
@@ -25,7 +25,9 @@ window.__ModuleLoader__.load({
     "needsDeepgramOptions": "Deepgram also needs providerOptions.deepgram.projectId + balanceId — the key alone is not enough.",
     "usageError": "Usage dashboard request failed.",
     "error": "Error",
-    "usageHint": "Usage and credit snapshots are shown here. Refresh is manual; there is no background polling.",
+    "usageHint": "Saved snapshots appear first. The server updates expired data, or you can force a refresh. There is no background polling.",
+    "cached": "Previous snapshot",
+    "updatingCache": "Updating; showing the previous snapshot for now.",
     "credTitle": "Credential setup",
     "credHint": "Enter a credential only when this store is writable. The value is never shown, logged, or written to this repository.",
     "credBadge": "Settings",
@@ -83,7 +85,7 @@ window.__ModuleLoader__.load({
     "used": "Used",
     "resets": "Resets",
     "balance": "Balance",
-    "serverHint": "Usage is fetched by your DSH server and shared across devices.",
+    "serverHint": "Snapshots are saved on the DSH server and shared across devices; providers are queried only when data expires.",
     "missingHint": "Add a credential to view this provider’s usage.",
     "modelsSource": "Using the key from Models settings",
     "timeoutHint": "The provider timed out. You can try refreshing again.",
@@ -120,7 +122,9 @@ window.__ModuleLoader__.load({
     "needsDeepgramOptions": "Deepgram 还需配置 providerOptions.deepgram.projectId 与 balanceId，仅凭密钥并不足够。",
     "usageError": "用量请求失败。",
     "error": "错误",
-    "usageHint": "此处显示用量与额度快照。刷新需手动触发，不会在后台轮询。",
+    "usageHint": "先显示已保存的快照，过期时由服务器更新；也可手动强制刷新，不会在后台轮询。",
+    "cached": "上次记录",
+    "updatingCache": "正在更新，暂时显示上次记录。",
     "credTitle": "凭据设置",
     "credHint": "仅在凭据存储可写时输入。该值不会显示、不会记录日志，也不会写入本代码仓库。",
     "credBadge": "设置",
@@ -154,7 +158,7 @@ window.__ModuleLoader__.load({
     "used": "已用",
     "resets": "重置时间",
     "balance": "余额",
-    "serverHint": "用量由 DSH 服务器查询，并在各设备之间共享。",
+    "serverHint": "快照由 DSH 服务器保存并跨设备共用，资料过期时才查询提供商。",
     "missingHint": "配置凭据后即可查看该服务的用量。",
     "modelsSource": "使用模型设置中的 API 密钥",
     "timeoutHint": "服务响应超时，可重新刷新。",
@@ -215,7 +219,9 @@ window.__ModuleLoader__.load({
     "needsDeepgramOptions": "Deepgram 另需設定 providerOptions.deepgram.projectId 與 balanceId，僅有密鑰並不足夠。",
     "usageError": "用量請求失敗。",
     "error": "錯誤",
-    "usageHint": "此處顯示用量與額度快照。重新整理由手動觸發，不會在背景輪詢。",
+    "usageHint": "先顯示已儲存的快照，過期時由伺服器更新；也可手動強制重新整理，不會在背景輪詢。",
+    "cached": "上次記錄",
+    "updatingCache": "正在更新，暫時顯示上次記錄。",
     "credTitle": "憑證設定",
     "credHint": "僅在憑證儲存可寫入時輸入。此值不會顯示、不會記錄於日誌，亦不會寫入此儲存庫。",
     "credBadge": "設定",
@@ -249,7 +255,7 @@ window.__ModuleLoader__.load({
     "used": "已用",
     "resets": "重設時間",
     "balance": "餘額",
-    "serverHint": "由 DSH 伺服器查詢用量，各裝置共用結果。",
+    "serverHint": "快照由 DSH 伺服器保存並跨裝置共用，資料過期時才查詢供應商。",
     "missingHint": "設定憑證後即可查看此服務的用量。",
     "modelsSource": "使用模型設定中的 API 密鑰",
     "timeoutHint": "服務回應逾時，可重新整理。",
@@ -310,7 +316,9 @@ window.__ModuleLoader__.load({
     "needsDeepgramOptions": "Deepgram では providerOptions.deepgram.projectId と balanceId の設定も必要です。キーだけでは足りません。",
     "usageError": "使用量の取得に失敗しました。",
     "error": "エラー",
-    "usageHint": "ここに使用量とクレジットのスナップショットを表示します。更新は手動で、バックグラウンドでのポーリングは行いません。",
+    "usageHint": "保存済みの記録を先に表示し、期限切れのデータはサーバーが更新します。手動更新も可能です。バックグラウンドのポーリングは行いません。",
+    "cached": "前回の記録",
+    "updatingCache": "更新中です。前回の記録を表示しています。",
     "credTitle": "認証情報の設定",
     "credHint": "このストアが書き込み可能な場合にのみ入力してください。入力した値は表示・記録・このリポジトリへの書き込みを行いません。",
     "credBadge": "設定",
@@ -344,7 +352,7 @@ window.__ModuleLoader__.load({
     "used": "使用済み",
     "resets": "リセット",
     "balance": "残高",
-    "serverHint": "使用量は DSH サーバーが取得し、各デバイスで共有されます。",
+    "serverHint": "記録は DSH サーバーに保存され、デバイス間で共有されます。有効期限が切れたときだけ取得します。",
     "missingHint": "認証情報を設定すると、このプロバイダーの使用量を確認できます。",
     "modelsSource": "モデル設定の API キーを使用",
     "timeoutHint": "プロバイダーがタイムアウトしました。更新を再試行できます。",
@@ -606,12 +614,61 @@ function providerWarning(provider, labels) {
       }
       throw httpError
     }
+    const SNAPSHOT_CACHE_KEY='dsh-usage-dashboard:snapshot:v1'
+    const SNAPSHOT_CACHE_LIMIT=64*1024
+    const CACHE_PROVIDERS=Object.fromEntries([...CRED_ROWS,...EXP_ROWS,{providerId:'chatgpt-codex',displayName:'ChatGPT / Codex'}].map(row=>[row.providerId,row.displayName]))
+    const CACHE_STATES=['fresh','stale','needs-configuration','unsupported','error']
+    const CACHE_ERRORS=['bad-request','endpoint-not-allowed','credential-missing','credential-rejected','credential-not-writable','provider-http','provider-timeout','provider-invalid-response','provider-unsupported','internal']
+    const cacheDate=value=>typeof value==='string'&&value.length<=32&&Number.isFinite(Date.parse(value))?value:undefined
+    const cacheLabel=value=>typeof value==='string'&&value.length<=120?value:undefined
+    // Project only display fields. Never serialize settings, credential forms, raw warnings or response extras.
+    function cacheMetric(metric){
+      if(!metric||typeof metric!=='object')return undefined
+      const label=cacheLabel(metric.label)
+      if(metric.kind==='balance'&&Number.isFinite(metric.remaining)&&typeof metric.currency==='string'&&/^[A-Z]{3}$/.test(metric.currency)){
+        return {kind:'balance',remaining:metric.remaining,currency:metric.currency,label,...(Number.isFinite(metric.used)?{used:metric.used}:{}),...(Number.isFinite(metric.purchased)?{purchased:metric.purchased}:{})}
+      }
+      if(metric.kind!=='quota'||!['requests','credits','usd','percent'].includes(metric.unit)||!Number.isFinite(metric.used)||!Number.isFinite(metric.limit))return undefined
+      const window=metric.window
+      return {kind:'quota',unit:metric.unit,used:metric.used,limit:metric.limit,label,...(window&&['rolling','calendar'].includes(window.kind)?{window:{kind:window.kind,label:cacheLabel(window.label),resetsAt:cacheDate(window.resetsAt),...(Number.isFinite(window.durationSeconds)&&window.durationSeconds>0?{durationSeconds:window.durationSeconds}:{})}}:{})}
+    }
+    function cacheSnapshot(value){
+      if(!value||!Array.isArray(value.providers)||value.providers.length>9)return undefined
+      const providers=[];const seen=new Set()
+      for(const provider of value.providers){
+        if(!provider||!Object.prototype.hasOwnProperty.call(CACHE_PROVIDERS,provider.providerId)||seen.has(provider.providerId)||!CACHE_STATES.includes(provider.state)||!Array.isArray(provider.metrics)||provider.metrics.length>32)return undefined
+        const metrics=provider.metrics.map(cacheMetric)
+        if(metrics.some(metric=>metric===undefined))return undefined
+        seen.add(provider.providerId)
+        providers.push({providerId:provider.providerId,displayName:CACHE_PROVIDERS[provider.providerId],state:provider.state,metrics,fetchedAt:cacheDate(provider.fetchedAt),expiresAt:cacheDate(provider.expiresAt),attemptedAt:cacheDate(provider.attemptedAt),errorCode:CACHE_ERRORS.includes(provider.errorCode)?provider.errorCode:undefined})
+      }
+      const manual=value.activity?.lastManualRefresh
+      const lastManualRefresh=manual&&cacheDate(manual.requestedAt)?{requestedAt:cacheDate(manual.requestedAt),completedAt:cacheDate(manual.completedAt),outcome:['complete','partial','failed'].includes(manual.outcome)?manual.outcome:undefined}:undefined
+      return {version:1,providers,activity:lastManualRefresh?{lastManualRefresh}:{}}
+    }
+    function readUsageCache(){
+      try{
+        const raw=window.localStorage?.getItem(SNAPSHOT_CACHE_KEY)
+        if(!raw||raw.length>SNAPSHOT_CACHE_LIMIT)return undefined
+        const value=JSON.parse(raw)
+        return value?.version===1?cacheSnapshot(value):undefined
+      }catch{return undefined}
+    }
+    function writeUsageCache(value){
+      try{
+        const snapshot=cacheSnapshot(value)
+        if(!snapshot)return
+        const raw=JSON.stringify(snapshot)
+        if(raw.length<=SNAPSHOT_CACHE_LIMIT)window.localStorage?.setItem(SNAPSHOT_CACHE_KEY,raw)
+      }catch{/* Storage is optional (private mode, disabled storage or quota). */}
+    }
+    function clearUsageCache(){try{window.localStorage?.removeItem(SNAPSHOT_CACHE_KEY)}catch{}}
     function dateText(value,locale,labels){const date=new Date(value??'');return Number.isFinite(date.getTime())?new Intl.DateTimeFormat(locale,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(date):labels.notRecorded}
     function timeRow(label,value,locale,labels){return React.createElement('div',{className:'dsw-time-row'},React.createElement('span',null,label),React.createElement('time',{dateTime:value,title:value},dateText(value,locale,labels)))}
     function UsageView({context}){
       const locale=localeOf(context)
       const labels=TEXT[locale]
-      const[state,setState]=React.useState({loading:true,providers:[],activity:{},error:undefined})
+      const[state,setState]=React.useState(()=>{const cached=readUsageCache();return {loading:true,providers:cached?.providers??[],activity:cached?.activity??{},cached:!!cached?.providers.length,error:undefined}})
       const[credStatus,setCredStatus]=React.useState({loading:true,items:[],error:undefined})
       const[credInputs,setCredInputs]=React.useState({})
       const[credBusy,setCredBusy]=React.useState(null)
@@ -623,19 +680,42 @@ function providerWarning(provider, labels) {
       React.useEffect(()=>{if(typeof localeService?.subscribe==='function')return localeService.subscribe(()=>setLocaleRevision(value=>value+1))},[localeService])
       const loadBusy=React.useRef(false)
       const credentialSection=React.useRef(null)
+      const accessRejected=React.useRef(false)
+      const rejectAccess=React.useCallback(error=>{
+        if(!['session-required','untrusted-host'].includes(error?.code))return false
+        accessRejected.current=true;clearUsageCache()
+        const empty={loading:false,providers:[],activity:{},cached:false,error}
+        setState(empty)
+        return true
+      },[])
       const load=React.useCallback(async(force=false,reason)=>{
         if(loadBusy.current)return
-        loadBusy.current=true
+        loadBusy.current=true;accessRejected.current=false
         setState(current=>({...current,loading:true,error:undefined}))
-        try{const value=await rpc(context,USAGE_CHANNEL,'snapshot',{force,reason});setState({loading:false,providers:Array.isArray(value?.providers)?value.providers:[],activity:value?.activity??{},error:undefined})}
-        catch(error){setState(current=>({...current,loading:false,error}))}
+        try{
+          const show=(value,updating=false)=>{
+            if(!Array.isArray(value?.providers))throw httpTransportError('Usage dashboard snapshot is malformed.')
+            const next={loading:updating,providers:value.providers,activity:value.activity??{},cached:updating,error:undefined}
+            writeUsageCache(next);setState(next)
+          }
+          let value=await rpc(context,USAGE_CHANNEL,'snapshot',force?{force,reason}:{cacheOnly:true})
+          if(accessRejected.current)return
+          // The server is authoritative across devices. Its cache-only read never calls providers.
+          if(!force&&value?.needsRefresh===true){
+            show(value,true)
+            value=await rpc(context,USAGE_CHANNEL,'snapshot',{force:false,reason})
+            if(accessRejected.current)return
+          }
+          show(value)
+        }
+        catch(error){if(!rejectAccess(error)&&!accessRejected.current)setState(current=>({...current,loading:false,cached:current.providers.length>0,error}))}
         finally{loadBusy.current=false}
-      },[context,labels])
+      },[context,rejectAccess])
       const loadCred=React.useCallback(async()=>{
         setCredStatus(current=>({...current,loading:true,error:undefined}))
         try{const value=await rpc(context,USAGE_CHANNEL,'settings/read',{});const items=Array.isArray(value?.credentials)?value.credentials:[];setCredStatus({loading:false,items,error:undefined})}
-        catch(error){setCredStatus(current=>({...current,loading:false,error}))}
-      },[context,labels])
+        catch(error){rejectAccess(error);setCredStatus(current=>({...current,loading:false,error}))}
+      },[context,rejectAccess])
       const statusItem=(reference)=>credStatus.items.find(item=>item?.reference===reference)
       const saveCred=React.useCallback(async(reference)=>{
         const item=statusItem(reference)
@@ -645,9 +725,9 @@ function providerWarning(provider, labels) {
         if(value.length<8||value.length>4096||/[\r\n]/.test(value)){setCredMsg(current=>({...current,[reference]:{key:'need8'}}));return}
         setCredBusy(reference);setCredMsg(current=>({...current,[reference]:{key:'saving'}}))
         try{await rpc(context,USAGE_CHANNEL,'credential/write',{reference,value});setCredInputs(current=>({...current,[reference]:''}));setCredMsg(current=>({...current,[reference]:{key:'saved'}}));await loadCred();await load(true,'credential')}
-        catch(error){setCredMsg(current=>({...current,[reference]:error}))}
+        catch(error){rejectAccess(error);setCredMsg(current=>({...current,[reference]:error}))}
         finally{setCredBusy(null)}
-      },[context,credInputs,credStatus,labels,load,loadCred])
+      },[context,credInputs,credStatus,labels,load,loadCred,rejectAccess])
       React.useEffect(()=>{void load(false)},[load])
       React.useEffect(()=>{void loadCred()},[loadCred])
       const openCredentials=()=>{setCredOpen(true);requestAnimationFrame(()=>credentialSection.current?.scrollIntoView({block:'start',behavior:'smooth'}))}
@@ -685,11 +765,12 @@ function providerWarning(provider, labels) {
             metric.window?.resetsAt?timeRow(labels.resets,metric.window.resetsAt,locale,labels):null)
         }):null
         const stateKey=typeof provider.state==='string'?provider.state:'unknown'
-        const statusText=stateKey==='stale'?labels.stale:stateKey==='unsupported'?labels.unsupported:stateKey==='needs-configuration'?labels.needsConfig:stateKey==='error'?labels.error:stateKey==='fresh'?labels.fresh:labels.unknown
+        const showingPrevious=stateKey==='fresh'&&(state.cached||state.loading)
+        const statusText=showingPrevious?labels.cached:stateKey==='stale'?labels.stale:stateKey==='unsupported'?labels.unsupported:stateKey==='needs-configuration'?labels.needsConfig:stateKey==='error'?labels.error:stateKey==='fresh'?labels.fresh:labels.unknown
         const reference=CRED_ROWS.find(row=>row.providerId===provider.providerId)?.reference
         const warning=showDeepgramOptions||provider.providerId==='chatgpt-codex'&&provider.state==='needs-configuration'?undefined:providerWarning(provider,labels)
         return React.createElement('article',{className:'dsw-provider-card',key:provider.providerId,'data-provider':provider.providerId},
-          React.createElement('header',{className:'dsw-card__header'},React.createElement('h3',null,provider.displayName),React.createElement('span',{className:`dsw-provider-status dsw-provider-status--${stateKey}`},statusText)),
+          React.createElement('header',{className:'dsw-card__header'},React.createElement('h3',null,provider.displayName),React.createElement('span',{className:`dsw-provider-status dsw-provider-status--${showingPrevious?'stale':stateKey}`},statusText)),
           metrics,
           warning?React.createElement('p',{className:'dsw-card__warning'},warning):null,
           showDeepgramOptions?React.createElement('p',{className:'dsw-card__cred'},labels.needsDeepgramOptions):null,
@@ -703,6 +784,7 @@ function providerWarning(provider, labels) {
         React.createElement('section',{className:'dsw-usage-section dsw-usage-surface'},
           React.createElement('header',{className:'dsw-usage-heading'},React.createElement('span',{className:'dsw-usage-accent','aria-hidden':true}),React.createElement('h2',null,labels.overview),React.createElement('button',{type:'button',disabled:state.loading,onClick:()=>{void load(true,'manual');void loadCred()}},state.loading?labels.loading:labels.refresh)),
           React.createElement('p',{className:'dsw-webhint'},labels.serverHint),
+          state.providers.length>0&&(state.loading||state.cached)?React.createElement('p',{className:'dsw-webhint',role:'status'},state.loading?labels.updatingCache:labels.staleHint):null,
           React.createElement('div',{className:'dsw-activity','aria-live':'polite'},timeRow(labels.manualRequested,manual?.requestedAt,locale,labels),timeRow(labels.manualCompleted,manual?.completedAt,locale,labels),manual?React.createElement('span',{className:'dsw-metric-label'},labels[manual.outcome??'pending']):null),
           state.loading&&state.providers.length===0?React.createElement('p',{className:'dsw-empty'},labels.loading):null,
           !state.loading&&state.providers.length===0?React.createElement('p',{className:'dsw-empty'},labels.empty):null,
